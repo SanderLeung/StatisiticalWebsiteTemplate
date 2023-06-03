@@ -1,9 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from sodapy import Socrata
+import datetime
 
-def get_fixtures(dataset):
-    
+def get_sf_data():
     # Unauthenticated client only works with public data sets. Note 'None'
     # in place of application token, and no username or password:
     client = Socrata("data.sfgov.org", None)
@@ -13,23 +13,19 @@ def get_fixtures(dataset):
     #                  MyAppToken,
     #                  username="user@example.com",
     #                  password="AFakePassword")
-
-    results = client.get_all(dataset)
+    now = datetime.datetime.now()
+    last_year = now.year - 1
+    results = client.get_all("88g8-5mnd", year=last_year, year_type='Calendar')
 
     # Convert to pandas DataFrame
     df = pd.DataFrame.from_records(results)
-    
+    df["total_salary"] = df["total_salary"].astype(float)
+    df["overtime"] = df["overtime"].astype(float)
+    df["salaries"] = df["salaries"].astype(float)
     return(df)
 
 #SF_data = pd.read_csv('.\Employee_Compensation.csv')
 #SF_data.name = 'Compensation data'
-
-def get_sf_data():
-    df = get_fixtures("88g8-5mnd")
-    df["total_salary"] = df["total_salary"].astype(float)
-    df["overtime"] = df["overtime"].astype(float)
-    df["salaries"] = df["salaries"].astype(float)
-    return df
 
 def create_figure(df, code):
     fig, ax = plt.subplots(figsize = (20,10))
@@ -42,14 +38,11 @@ def create_figure(df, code):
     if x:
         ax.boxplot(data, labels = x)
 
-    plt.xticks(rotation = 30, size = 10)
     plt.xlabel("Job Code", size = 15)
     plt.ylabel("Salary", size = 10)
-    plt.title("Salary Dist by Job", size = 20)
+    plt.title(f"Salary Dist by Job for family {code}", size = 20)
 
     return fig
-
-#fig size for insta = (25,8) and for website = (15,8)
 
 def overtime_data(df):
     overtime = df.query('overtime > salaries and salaries > 0')
